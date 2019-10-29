@@ -1,7 +1,8 @@
 {
   "name": "@qvvg/sos",
   "description": "State Owned State",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "private": false,
   "author": "james hunter <github@qv.vg>",
   "license": "MIT",
   "main": "dist/sos.cjs.js",
