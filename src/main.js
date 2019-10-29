@@ -1,0 +1,16 @@
+export {spawn, send, whereIs} from './registry.js'
+export {broadcast} from './domain/mods/broadcast.js'
+export {config} from './domain/mods/config.js'
+export {deps} from './domain/mods/deps.js'
+export {handleAsk} from './domain/mods/handle-ask.js'
+export {handleContinue} from './domain/mods/handle-continue.js'
+export {handleInfo} from './domain/mods/handle-info.js'
+export {handleInit} from './domain/mods/handle-init.js'
+export {handleTell} from './domain/mods/handle-tell.js'
+export {handleTerminate} from './domain/mods/handle-terminate.js'
+export {handleTimeout} from './domain/mods/handle-timeout.js'
+export {label} from './domain/mods/label.js'
+export {withName} from './domain/mods/with-name.js'
+
+import Domain from './domain/domain.js'
+export default Domain
