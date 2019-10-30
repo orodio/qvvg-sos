@@ -1,4 +1,4 @@
-import Domain, {label, withName, handleInit, handleTell, handleAsk} from '../src/main.js'
+import {Domain, label, withName, handleInit, handleTell, handleAsk} from '../src/main.js'
 
 describe('intro', () => {
   // A Domain by itself still works, it just cant really do anything

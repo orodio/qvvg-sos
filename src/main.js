@@ -1,6 +1,7 @@
 export {spawn, send, whereIs} from './registry.js'
 export {broadcast} from './domain/mods/broadcast.js'
 export {config} from './domain/mods/config.js'
+export {debug} from './domain/mods/debug.js'
 export {deps} from './domain/mods/deps.js'
 export {handleAsk} from './domain/mods/handle-ask.js'
 export {handleContinue} from './domain/mods/handle-continue.js'

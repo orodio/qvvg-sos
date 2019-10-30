@@ -1,7 +1,7 @@
 import {genMailbox} from './lib/gen-mailbox.js'
 import {genColor} from './lib/gen-color.js'
 
-const TEST = true
+const TEST = false
 
 const registry = {}
 const via = {}
