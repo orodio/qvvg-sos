@@ -1,6 +1,10 @@
-export const noop = (ctx, state) => ctx.Ok(state)
+export function noop(ctx, state) {
+  return ctx.Ok(state)
+}
 
-export const handleTimeout = (fn = noop) => node => {
-  node.handleTimeout = fn
-  return node
+export function handleTimeout(fn = noop) {
+  return function modNode(node) {
+    node.handleTimeout = fn
+    return node
+  }
 }

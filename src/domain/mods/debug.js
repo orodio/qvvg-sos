@@ -1,4 +1,6 @@
-export const debug = bool => node => {
-  node.debug = true
-  return node
+export function debug(bool) {
+  return function modNode(node) {
+    node.debug = bool
+    return node
+  }
 }

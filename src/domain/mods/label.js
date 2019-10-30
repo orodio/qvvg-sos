@@ -1,4 +1,6 @@
-export const label = label => node => {
-  node.label = label
-  return node
+export function label(label) {
+  return function modNode(node) {
+    node.label = label
+    return node
+  }
 }

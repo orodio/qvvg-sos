@@ -1,6 +1,10 @@
-export const noop = (ctx, init) => ctx.Ok(init)
+export function noop(ctx, init) {
+  return ctx.Ok(init)
+}
 
-export const handleInit = (fn = noop) => node => {
-  node.handleInit = fn
-  return node
+export function handleInit(fn = noop) {
+  return function modNode(node) {
+    node.handleInit = fn
+    return node
+  }
 }

@@ -6,7 +6,7 @@ const TEST = false
 const registry = {}
 const via = {}
 
-const register = (opts = {}) => {
+function register(opts = {}) {
   const {pid, ...mailbox} = genMailbox()
   registry[pid] = {
     pid,
@@ -20,7 +20,7 @@ const register = (opts = {}) => {
   return pid
 }
 
-export const whereIs = address => {
+export function whereIs(address) {
   var pid = null
   if (via[address] != null) return (address = via[address])
   if (registry[address] != null) pid = address
@@ -28,7 +28,7 @@ export const whereIs = address => {
 }
 
 const display = {
-  pid: pid => {
+  pid(pid) {
     try {
       const {color, name, label} = registry[pid]
       const value = `%c<${label}.${name || pid}>`
@@ -39,7 +39,7 @@ const display = {
       return ['', '']
     }
   },
-  print: (verb, pid, ...rest) => {
+  print(verb, pid, ...rest) {
     try {
       pid = whereIs(pid)
       if (pid == null) return
@@ -52,32 +52,38 @@ const display = {
       return
     }
   },
-  debug: (...args) => display.print('log', ...args),
-  warn: (...args) => display.print('warn', ...args),
-  error: (...args) => display.print('error', ...args),
+  debug(...args) {
+    display.print('log', ...args)
+  },
+  warn(...args) {
+    display.print('warn', ...args)
+  },
+  error(...args) {
+    display.print('error', ...args)
+  },
 }
 
-const deliver = (address, msg) => {
+function deliver(address, msg) {
   const pid = whereIs(address)
   if (pid == null) return false
   registry[pid].mailbox.send(msg)
   return true
 }
 
-const receive = address => {
+function receive(address) {
   const pid = whereIs(address)
   if (pid == null) Promise.reject(`No mailbox found for: ${address}`)
   return registry[pid].mailbox.receive()
 }
 
-export const kill = address => {
+export function kill(address) {
   const pid = whereIs(address)
   if (address !== pid) delete via[address]
   delete registry[pid]
   return pid
 }
 
-const scrubMessage = (opts = {}, value) => {
+function scrubMessage(opts = {}, value) {
   if (typeof opts === 'number' || typeof opts === 'string') opts = {to: opts}
   opts.value = opts.value || value
 
@@ -89,8 +95,8 @@ const scrubMessage = (opts = {}, value) => {
   }
 }
 
-export const send = (opts, value) =>
-  new Promise((resolve, reject) => {
+export function send(opts, value) {
+  return new Promise((resolve, reject) => {
     const message = scrubMessage(opts, value)
     const sent = deliver(message.to, message)
     sent
@@ -98,20 +104,25 @@ export const send = (opts, value) =>
       : console.warn(message.to, 'unable to deliver message', message)
     return resolve(sent)
   })
+}
 
-const buildContext = (pid, extra = {}) => ({
-  self: () => registry[pid].name || pid,
-  label: () => registry[pid].label,
-  extra: extra,
-  receive: () => receive(pid),
-  debug: display.debug,
-  warn: display.warn,
-  error: display.error,
-})
+function buildContext(pid, extra = {}) {
+  return {
+    self: () => registry[pid].name || pid,
+    label: () => registry[pid].label,
+    extra: extra,
+    receive: () => receive(pid),
+    debug: display.debug,
+    warn: display.warn,
+    error: display.error,
+  }
+}
 
-const noop = _ => null
+function noop() {
+  return null
+}
 
-export const spawn = (callback = noop, initState = null, opts = {}) => {
+export function spawn(callback = noop, initState = null, opts = {}) {
   if (typeof callback === 'object') {
     const node = callback.node || {}
     opts.label = opts.label || node.label || '*'

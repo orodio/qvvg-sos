@@ -2,6 +2,10 @@ import {send} from '../../registry.js'
 
 export const REPLY = 'reply'
 
-export const reply = (address, value) => send({to: address, meta: {type: REPLY}}, value)
+export function reply(address, value) {
+  return send({to: address, meta: {type: REPLY}}, value)
+}
 
-export const isReply = message => message.meta.type === REPLY
+export function isReply(message) {
+  return message.meta.type === REPLY
+}

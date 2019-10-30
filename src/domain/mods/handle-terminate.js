@@ -1,6 +1,10 @@
-export const noop = (_ctx, _state, reason) => reason
+export function noop(_ctx, _state, reason) {
+  return reason
+}
 
-export const handleTerminate = (fn = noop) => node => {
-  node.handleTerminate = fn
-  return node
+export function handleTerminate(fn = noop) {
+  return function modNode(node) {
+    node.handleTerminate = fn
+    return node
+  }
 }

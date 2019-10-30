@@ -1,6 +1,10 @@
-const noop = (init, label) => `${label}|${init}`
+function noop(init, label) {
+  return label + '|' + init
+}
 
-export const withName = (fn = noop) => node => {
-  node.withName = fn
-  return node
+export function withName(fn = noop) {
+  return function modNode(node) {
+    node.withName = fn
+    return node
+  }
 }

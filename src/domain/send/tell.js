@@ -2,6 +2,10 @@ import {send} from '../../registry.js'
 
 export const TELL = 'tell'
 
-export const tell = (address, verb, msg) => send({to: address, meta: {type: TELL, verb}}, msg)
+export function tell(address, verb, msg) {
+  return send({to: address, meta: {type: TELL, verb}}, msg)
+}
 
-export const isTell = message => message.meta.type === TELL
+export function isTell(message) {
+  return message.meta.type === TELL
+}

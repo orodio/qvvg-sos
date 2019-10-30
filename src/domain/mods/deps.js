@@ -1,6 +1,12 @@
-export const noop = () => ({})
+export function noop() {
+  return function emptyDeps() {
+    return {}
+  }
+}
 
-export const deps = (fn = noop) => node => {
-  node.deps = fn
-  return node
+export function deps(fn = noop) {
+  return function modNode(node) {
+    node.deps = fn
+    return node
+  }
 }
