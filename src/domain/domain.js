@@ -48,4 +48,4 @@ Domain.dump = dump
 Domain.tell = tell
 Domain.ask = ask
 
-export default Domain
+export {Domain}

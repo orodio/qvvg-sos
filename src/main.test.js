@@ -1,4 +1,5 @@
-import Domain, {
+import {
+  Domain,
   whereIs,
   label,
   withName,

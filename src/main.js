@@ -11,6 +11,4 @@ export {handleTerminate} from './domain/mods/handle-terminate.js'
 export {handleTimeout} from './domain/mods/handle-timeout.js'
 export {label} from './domain/mods/label.js'
 export {withName} from './domain/mods/with-name.js'
-
-import Domain from './domain/domain.js'
-export default Domain
+export {Domain} from './domain/domain.js'
