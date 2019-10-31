@@ -14,7 +14,7 @@ export function buildCallbackFromNode(node) {
     }
 
     function scheduleTimeout({ms, args}) {
-      timeout = setTimeout(() => {
+      timeout = setTimeout(function scheduledTimeout() {
         send({to: ctx.self(), from: ctx.self(), meta: {type: 'timeout'}}, {ms, args})
       }, ms)
     }
@@ -76,7 +76,10 @@ async function execMessage(node, ctx, state, message) {
   try {
     const from = message.from
     let signal = null
-    if (from != null) ctx.reply = value => send({to: from, from: ctx.self()}, value)
+    if (from != null)
+      ctx.reply = function sendReply(value) {
+        send({to: from, from: ctx.self()}, value)
+      }
 
     switch (true) {
       case message.meta.type === 'stop':

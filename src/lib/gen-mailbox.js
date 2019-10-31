@@ -14,7 +14,7 @@ export function genMailbox() {
   }
 
   function receive() {
-    return new Promise(resolve => {
+    return new Promise(function promReceive(resolve) {
       const msg = queue.shift()
       if (msg) {
         return resolve(msg)

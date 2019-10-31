@@ -96,7 +96,7 @@ function scrubMessage(opts = {}, value) {
 }
 
 export function send(opts, value) {
-  return new Promise((resolve, reject) => {
+  return new Promise(function promSend(resolve, reject) {
     const message = scrubMessage(opts, value)
     const sent = deliver(message.to, message)
     sent
@@ -108,10 +108,16 @@ export function send(opts, value) {
 
 function buildContext(pid, extra = {}) {
   return {
-    self: () => registry[pid].name || pid,
-    label: () => registry[pid].label,
+    self() {
+      return registry[pid].name || pid
+    },
+    label() {
+      return registry[pid].label
+    },
     extra: extra,
-    receive: () => receive(pid),
+    receive() {
+      return receive(pid)
+    },
     debug: display.debug,
     warn: display.warn,
     error: display.error,
@@ -139,7 +145,7 @@ export function spawn(callback = noop, initState = null, opts = {}) {
 
   var pid = register(opts)
 
-  setTimeout(async () => {
+  setTimeout(async function innerSpawn() {
     const reason = await callback(buildContext(pid, opts.inject || {}), initState)
     display.debug(pid, 'kill', reason)
     kill(pid)

@@ -7,7 +7,7 @@ function noop(v) {
 export function broadcast(key, fn = noop) {
   return function modNode(node) {
     if (node.broadcast == null) node.broadcast = {}
-    node.broadcast[key] = (pids, ...args) => {
+    node.broadcast[key] = function shotgun(pids, ...args) {
       const msg = fn(...args)
       const event = node.ns == null ? key : node.ns(key)
       for (let pid of pids) tell(pid, event, msg)

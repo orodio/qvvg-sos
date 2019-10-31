@@ -15,7 +15,7 @@ function Domain(mods = []) {
   this.node = {
     withName: null,
     label: '*',
-    ns: key => `${this.node.label}/${key}`,
+    ns: key => this.node.label + '/' + key,
     config: {},
     broadcast: {},
     deps: depsNoop,
@@ -27,7 +27,9 @@ function Domain(mods = []) {
     handleAsk: {},
     handleContinue: {},
   }
-  this.node = mods.reduce((node, mod) => mod(node), this.node)
+  this.node = mods.reduce(function applyMod(node, mod) {
+    return mod(node)
+  }, this.node)
   this.callback = buildCallbackFromNode(this.node)
   this.events = Object.keys(this.node.broadcast).reduce(
     (ex, e) => ({...ex, [e]: this.node.ns(e)}),
