@@ -30,3 +30,17 @@ test('multiple mailboxes', async () => {
   for (let msg of m1x) expect(await m1.receive()).toBe(msg)
   for (let msg of m2x) expect(await m2.receive()).toBe(msg)
 })
+
+test('size', async () => {
+  const m = genMailbox()
+  const mx = [MSG_ONE, MSG_TWO, MSG_THREE]
+  for (let msg of mx) m.send(msg)
+
+  expect(m.size()).toBe(3)
+  await m.receive()
+  expect(m.size()).toBe(2)
+  await m.receive()
+  expect(m.size()).toBe(1)
+  await m.receive()
+  expect(m.size()).toBe(0)
+})

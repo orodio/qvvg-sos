@@ -1,4 +1,4 @@
-import {genMailbox} from './lib/gen-mailbox.js'
+import {genMailbox, enqueued, isIdle} from './lib/gen-mailbox.js'
 import {genColor} from './lib/gen-color.js'
 
 const TEST = false
@@ -153,4 +153,30 @@ export function spawn(callback = noop, initState = null, opts = {}) {
 
   display.debug(pid, 'Started')
   return opts.name || pid
+}
+
+export function resetAll() {
+  for (let address of Object.keys(via)) kill(address)
+  for (let address of Object.keys(registry)) kill(address)
+}
+
+export function nextIdle(minIdleTicks = 3) {
+  return new Promise(resolve => {
+    let idleTicks = 0
+
+    function rec() {
+      const count = enqueued()
+      if (count > 0) {
+        idleTicks = 0
+        return setTimeout(() => rec(), 1)
+      } else if (idleTicks >= minIdleTicks) {
+        return resolve()
+      } else {
+        idleTicks += 1
+        return setTimeout(() => rec(), 1)
+      }
+    }
+
+    return setTimeout(() => rec(), 1)
+  })
 }

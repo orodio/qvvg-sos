@@ -1,5 +1,7 @@
 import {
   Domain,
+  nextIdle,
+  resetAll,
   whereIs,
   label,
   withName,
@@ -12,6 +14,8 @@ import {
   handleContinue,
   handleTerminate,
 } from './main.js'
+
+beforeEach(() => resetAll())
 
 const sleep = (ms = 5) => new Promise(resolve => setTimeout(() => resolve(), ms))
 
@@ -98,7 +102,7 @@ describe('Domain', () => {
     expect(saveCount).toHaveBeenCalledTimes(2)
   })
 
-  test('subscriber', async () => {
+  test.only('subscriber', async () => {
     const receiveMsg = jest.fn((ctx, state) => ctx.Ok(state))
 
     const subscriber = Domain([
@@ -121,7 +125,7 @@ describe('Domain', () => {
     expect(receiveMsg).toHaveBeenCalledTimes(0)
     const ID = 'bar'
     const sub = subscriber.init(ID)
-    await sleep()
+    await nextIdle()
     await expect(await counter.dump(ID)).toEqual({
       counterId: ID,
       count: 0,
@@ -134,7 +138,7 @@ describe('Domain', () => {
       {count: 0, counterId: ID}
     )
     counter.tell(ID, 'inc', 10)
-    await sleep()
+    await nextIdle()
     expect(receiveMsg).toHaveBeenCalledTimes(2)
     expect(receiveMsg).toHaveBeenLastCalledWith(
       expect.any(Object),
@@ -143,7 +147,7 @@ describe('Domain', () => {
     )
 
     Domain.stop(sub)
-    await sleep()
+    await nextIdle()
     await expect(await counter.dump(ID)).toEqual({
       counterId: ID,
       count: 10,

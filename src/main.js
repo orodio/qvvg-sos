@@ -1,4 +1,4 @@
-export {spawn, send, whereIs} from './registry.js'
+export {spawn, send, whereIs, resetAll, nextIdle} from './registry.js'
 export {broadcast} from './domain/mods/broadcast.js'
 export {config} from './domain/mods/config.js'
 export {debug} from './domain/mods/debug.js'

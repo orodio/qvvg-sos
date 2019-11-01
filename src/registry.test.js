@@ -1,4 +1,8 @@
-import {spawn, send} from './registry.js'
+import {spawn, send, resetAll} from './registry.js'
+
+beforeEach(() => {
+  resetAll()
+})
 
 const INC = 'inc'
 const DEC = 'dec'
@@ -49,7 +53,7 @@ test('ordering', async () => {
   expect(await rpc(pid)).toBe(1)
 })
 
-test('named', async () => {
+const namedTest = async () => {
   const p1 = spawn(counter, 0, {name: 'bob'})
   const p2 = spawn(counter, 5, {name: 'bob'})
   const p3 = spawn(counter, 0, {name: 'steve'})
@@ -59,4 +63,7 @@ test('named', async () => {
   send('bob', {type: INC})
   expect(await rpc(p1)).toBe(1)
   expect(await rpc(p1)).toBe(await rpc(p2))
-})
+}
+
+test('named (actually test named)', namedTest)
+test('second named test (test before all)', namedTest)
