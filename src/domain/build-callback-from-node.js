@@ -1,4 +1,7 @@
 import {send} from '../registry.js'
+import {noop as noopHandleTell} from './mods/handle-tell.js'
+import {noop as noopHandleAsk} from './mods/handle-ask.js'
+import {noop as noopHandleContinue} from './mods/handle-continue.js'
 import Signal from './signal.js'
 
 export function buildCallbackFromNode(node) {
@@ -32,7 +35,7 @@ export function buildCallbackFromNode(node) {
             break
 
           case Signal.hasContinue(signal):
-            signal = await node.handleContinue[signal.continue.verb](
+            signal = await (node.handleContinue[signal.continue.verb] || noopHandleContinue)(
               ctx,
               signal.state,
               ...signal.continue.args
@@ -91,11 +94,19 @@ async function execMessage(node, ctx, state, message) {
         break
 
       case message.meta.type === 'tell':
-        signal = await node.handleTell[message.meta.verb](ctx, state, message.value)
+        signal = await (node.handleTell[message.meta.verb] || noopHandleTell)(
+          ctx,
+          state,
+          message.value
+        )
         break
 
       case message.meta.type === 'ask':
-        signal = await node.handleAsk[message.meta.verb](ctx, state, message.value)
+        signal = await (node.handleAsk[message.meta.verb] || noopHandleAsk)(
+          ctx,
+          state,
+          message.value
+        )
         break
 
       case message.meta.type === 'timeout':

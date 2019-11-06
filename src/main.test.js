@@ -102,7 +102,7 @@ describe('Domain', () => {
     expect(saveCount).toHaveBeenCalledTimes(2)
   })
 
-  test.only('subscriber', async () => {
+  test('subscriber', async () => {
     const receiveMsg = jest.fn((ctx, state) => ctx.Ok(state))
 
     const subscriber = Domain([
@@ -154,5 +154,26 @@ describe('Domain', () => {
       subs: new Set(),
     })
     expect(whereIs(sub)).toBe(null)
+  })
+
+  test('unhandled', async () => {
+    const base = Domain([])
+    const dm = base.init(55)
+    base.tell(dm, 'rawr')
+    expect(await base.dump(dm)).toBe(55)
+    expect(await base.ask(dm, 'rawr')).toBe(null)
+  })
+
+  test('unhandled continue', async () => {
+    const base = Domain([handleInit(ctx => ctx.Ok(55, ctx.Continue('rawr')))])
+    const dm = base.init()
+    expect(await base.dump(dm)).toBe(55)
+  })
+
+  test('unhandled timeout', async () => {
+    const base = Domain([handleInit(ctx => ctx.Ok(55, ctx.Timeout(1)))])
+    const dm = base.init()
+    await nextIdle()
+    expect(await base.dump(dm)).toBe(55)
   })
 })
