@@ -12,45 +12,56 @@ export function buildCallbackFromNode(node) {
 
     function dismissTimeout() {
       if (timeout == null) return
+      ctx.debug(ctx.self(), 'Clearing Scheduled Timeout')
       clearTimeout(timeout)
       timeout = null
     }
 
     function scheduleTimeout({ms, args}) {
+      ctx.debug(ctx.self(), `Scheduling Timeout Message for ${ms}ms from now.`, {ms, args})
       timeout = setTimeout(function scheduledTimeout() {
+        ctx.debug(ctx.self(), `Timeout Message Dispatched`, {ms, args})
         send({to: ctx.self(), from: ctx.self(), meta: {type: 'timeout'}}, {ms, args})
       }, ms)
     }
 
+    const grock = (label, args = []) => {
+      const t1 = Date.now()
+      ctx.debug(ctx.self(), `${label}/${args.length}`, args)
+      return (ret, ...more) => {
+        const t2 = Date.now()
+        ctx.debug(ctx.self(), `(${t2 - t1}ms) ${label}/${args.length} -> ${ret}`, args, ...more)
+      }
+    }
+
     while (1) {
-      let letter = null
       try {
-        switch (true) {
-          case Signal.isStop(signal):
-            return node.handleTerminate(ctx, signal.state, signal.reason)
-
-          case Signal.hasTimeout(signal):
-            scheduleTimeout(signal.timeout)
-            signal = Signal.scrubTimeout(signal)
-            break
-
-          case Signal.hasContinue(signal):
-            signal = await (node.handleContinue[signal.continue.verb] || noopHandleContinue)(
-              ctx,
-              signal.state,
-              ...signal.continue.args
-            )
-            break
-
-          case Signal.isOk(signal):
-            letter = await context.receive()
-            dismissTimeout()
-            signal = await execMessage(node, ctx, signal.state, letter)
-            break
-
-          default:
-            signal = ctx.Stop(signal.state, 'Unknown Signal Type')
-            break
+        if (Signal.isStop(signal)) {
+          const args = [ctx, signal.state, signal.reason]
+          const done = grock('handleTerminate', args)
+          const result = await node.handleTerminate(...args)
+          done()
+          return result
+        } else if (Signal.hasTimeout(signal)) {
+          scheduleTimeout(signal.timeout)
+          signal = Signal.scrubTimeout(signal)
+        } else if (Signal.hasContinue(signal)) {
+          const callback = node.handleContinue[signal.continue.verb] || noopHandleContinue
+          const args = [ctx, signal.state, ...signal.continue.args]
+          const done = grock('handleContinue', args)
+          signal = await (node.handleContinue[signal.continue.verb] || noopHandleContinue)(
+            ctx,
+            signal.state,
+            ...signal.continue.args
+          )
+          done(signal.signal, signal)
+        } else if (Signal.isOk(signal)) {
+          const letter = await context.receive()
+          dismissTimeout()
+          signal = await execMessage(grock, node, ctx, signal.state, letter)
+        } else {
+          ctx.error(ctx.self(), 'Unknown Signal Type', signal)
+          signal = ctx.Stop(signal.state, 'Unknown Signal Type')
         }
       } catch (error) {
         console.error(`Domain(${node.label}) -- Signal Error`, error)
@@ -72,10 +83,13 @@ function Ctx(context, node) {
   this.deps = node.deps()
   this.config = node.config
   this.broadcast = node.broadcast
+  this.debug = context.debug
+  this.warn = context.warn
+  this.error = context.error
   for (let key of Object.keys(context.extra)) this[key] = context.extra[key]
 }
 
-async function execMessage(node, ctx, state, message) {
+async function execMessage(grock, node, ctx, state, message) {
   try {
     const from = message.from
     let signal = null
@@ -84,37 +98,36 @@ async function execMessage(node, ctx, state, message) {
         send({to: from, from: ctx.self()}, value)
       }
 
-    switch (true) {
-      case message.meta.type === 'stop':
-        signal = ctx.Stop(state, message.value)
-        break
+    const metaType = message.meta.type
 
-      case message.meta.type === 'dump':
-        signal = ctx.Reply(state, state)
-        break
-
-      case message.meta.type === 'tell':
-        signal = await (node.handleTell[message.meta.verb] || noopHandleTell)(
-          ctx,
-          state,
-          message.value
-        )
-        break
-
-      case message.meta.type === 'ask':
-        signal = await (node.handleAsk[message.meta.verb] || noopHandleAsk)(
-          ctx,
-          state,
-          message.value
-        )
-        break
-
-      case message.meta.type === 'timeout':
-        signal = await node.handleTimeout(ctx, state, message)
-        break
-
-      default:
-        signal = await node.handleInfo(ctx, state, message)
+    if (metaType === 'stop') {
+      signal = ctx.Stop(state, message.value)
+    } else if (metaType === 'dump') {
+      const done = grock('handleDump', [])
+      signal = ctx.Reply(state, state)
+      done(signal.signal, signal)
+    } else if (metaType === 'tell') {
+      const args = [ctx, state, message.value]
+      const callback = node.handleTell[message.meta.verb] || noopHandleTell
+      const done = grock(`handleTell[${message.meta.verb}]`, args)
+      signal = await callback(...args)
+      done(signal.signal, signal)
+    } else if (metaType === 'ask') {
+      const args = [ctx, state, message.value]
+      const callback = node.handleAsk[message.meta.verb] || noopHandleAsk
+      const done = grock(`handleAsk[${message.meta.verb}]`, args)
+      signal = await callback(...args)
+      done(signal.signal, signal)
+    } else if (metaType === 'timeout') {
+      const args = [ctx, state, message]
+      const done = grock(`handleTimeout`, args)
+      signal = await node.handleTimeout(...args)
+      done(signal.signal)
+    } else {
+      const args = [ctx, state, message]
+      const done = grock('handleInfo', args)
+      signal = await node.handleInfo(args)
+      done(signal.signal, signal)
     }
 
     if (from != null && Signal.hasReply(signal)) ctx.reply(signal.reply)

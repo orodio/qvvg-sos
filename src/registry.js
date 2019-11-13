@@ -1,7 +1,7 @@
-import {genMailbox, enqueued, isIdle} from './lib/gen-mailbox.js'
+import {genMailbox, enqueued} from './lib/gen-mailbox.js'
 import {genColor} from './lib/gen-color.js'
 
-const TEST = false
+const TEST = Boolean(((process || {}).env || {}).TEST)
 
 const registry = {}
 const via = {}
@@ -31,7 +31,7 @@ const display = {
   pid(pid) {
     try {
       const {color, name, label} = registry[pid]
-      const value = `%c<${label}.${name || pid}>`
+      const value = `%c[${label}]${name || pid}`
       const styles = `color:${color};font-family:monospace;`
       return [value, styles]
     } catch (error) {

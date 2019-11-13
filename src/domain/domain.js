@@ -27,7 +27,7 @@ function Domain(mods = []) {
     handleAsk: {},
     handleContinue: {},
   }
-  this.node = mods.reduce(function applyMod(node, mod) {
+  this.node = mods.filter(Boolean).reduce(function applyMod(node, mod) {
     return mod(node)
   }, this.node)
   this.callback = buildCallbackFromNode(this.node)
