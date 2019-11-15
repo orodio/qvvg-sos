@@ -2,6 +2,11 @@ import {send} from '../registry.js'
 import {noop as noopHandleTell} from './mods/handle-tell.js'
 import {noop as noopHandleAsk} from './mods/handle-ask.js'
 import {noop as noopHandleContinue} from './mods/handle-continue.js'
+import {timeout as sendTimeout, isTimeout} from './send/timeout.js'
+import {isAsk} from './send/ask.js'
+import {isDump} from './send/dump.js'
+import {isStop} from './send/stop.js'
+import {isTell} from './send/tell.js'
 import Signal from './signal.js'
 
 export function buildCallbackFromNode(node) {
@@ -21,7 +26,7 @@ export function buildCallbackFromNode(node) {
       ctx.debug(ctx.self(), `Scheduling Timeout Message for ${ms}ms from now.`, {ms, args})
       timeout = setTimeout(function scheduledTimeout() {
         ctx.debug(ctx.self(), `Timeout Message Dispatched`, {ms, args})
-        send({to: ctx.self(), from: ctx.self(), meta: {type: 'timeout'}}, {ms, args})
+        sendTimeout(ctx.self(), ms, args)
       }, ms)
     }
 
@@ -48,7 +53,7 @@ export function buildCallbackFromNode(node) {
         } else if (Signal.hasContinue(signal)) {
           const callback = node.handleContinue[signal.continue.verb] || noopHandleContinue
           const args = [ctx, signal.state, ...signal.continue.args]
-          const done = grock('handleContinue', args)
+          const done = grock(`handleContinue[${signal.continue.verb}]`, args)
           signal = await (node.handleContinue[signal.continue.verb] || noopHandleContinue)(
             ctx,
             signal.state,
@@ -98,27 +103,25 @@ async function execMessage(grock, node, ctx, state, message) {
         send({to: from, from: ctx.self()}, value)
       }
 
-    const metaType = message.meta.type
-
-    if (metaType === 'stop') {
+    if (isStop(message)) {
       signal = ctx.Stop(state, message.value)
-    } else if (metaType === 'dump') {
+    } else if (isDump(message)) {
       const done = grock('handleDump', [])
       signal = ctx.Reply(state, state)
       done(signal.signal, signal)
-    } else if (metaType === 'tell') {
+    } else if (isTell(message)) {
       const args = [ctx, state, message.value]
       const callback = node.handleTell[message.meta.verb] || noopHandleTell
       const done = grock(`handleTell[${message.meta.verb}]`, args)
       signal = await callback(...args)
       done(signal.signal, signal)
-    } else if (metaType === 'ask') {
+    } else if (isAsk(message)) {
       const args = [ctx, state, message.value]
       const callback = node.handleAsk[message.meta.verb] || noopHandleAsk
       const done = grock(`handleAsk[${message.meta.verb}]`, args)
       signal = await callback(...args)
       done(signal.signal, signal)
-    } else if (metaType === 'timeout') {
+    } else if (isTimeout(message)) {
       const args = [ctx, state, message]
       const done = grock(`handleTimeout`, args)
       signal = await node.handleTimeout(...args)

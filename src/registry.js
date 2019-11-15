@@ -1,3 +1,4 @@
+import queueMicrotask from './lib/queue-microtask.js'
 import {genMailbox, enqueued} from './lib/gen-mailbox.js'
 import {genColor} from './lib/gen-color.js'
 
@@ -96,13 +97,12 @@ function scrubMessage(opts = {}, value) {
 }
 
 export function send(opts, value) {
-  return new Promise(function promSend(resolve, reject) {
+  queueMicrotask(function microSend() {
     const message = scrubMessage(opts, value)
     const sent = deliver(message.to, message)
     sent
       ? display.debug(message.to, 'was sent', message)
       : console.warn(message.to, 'unable to deliver message', message)
-    return resolve(sent)
   })
 }
 
@@ -145,7 +145,7 @@ export function spawn(callback = noop, initState = null, opts = {}) {
 
   var pid = register(opts)
 
-  setTimeout(async function innerSpawn() {
+  queueMicrotask(async function microSpawn() {
     const reason = await callback(buildContext(pid, opts.inject || {}), initState)
     display.debug(pid, 'kill', reason)
     kill(pid)
