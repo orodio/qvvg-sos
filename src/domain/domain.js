@@ -42,6 +42,14 @@ function Domain(mods = []) {
   this.ask = (address, ...args) => ask(this.withName(address), ...args)
   this.tell = (address, ...args) => tell(this.withName(address), ...args)
   this.dump = address => dump(this.withName(address))
+
+  for (let tell of Object.keys(this.node.handleTell)) {
+    this.tell[tell] = (address, ...args) => this.tell(address, tell, ...args)
+  }
+
+  for (let ask of Object.keys(this.node.handleAsk)) {
+    this.ask[ask] = (address, ...args) => this.ask(address, ask, ...args)
+  }
 }
 
 Domain.init = spawn

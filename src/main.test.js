@@ -177,3 +177,70 @@ describe('Domain', () => {
     expect(await base.dump(dm)).toBe(55)
   })
 })
+
+test('unnamed -- exposed tells and asks', async () => {
+  const base = Domain([
+    handleTell('inc', (ctx, count) => ctx.Ok(count + 1)),
+    handleTell('dec', (ctx, count) => ctx.Ok(count - 1)),
+    handleAsk('count', (ctx, count) => ctx.Reply(count, count)),
+  ])
+
+  const dm = base.init(10)
+  const c1a = await base.ask(dm, 'count')
+  const c1b = await base.ask.count(dm)
+  base.tell(dm, 'inc')
+  base.tell.inc(dm)
+  const c2 = await base.ask.count(dm)
+
+  expect(c1a).toBe(10)
+  expect(c1b).toBe(10)
+  expect(c1a).toBe(c1b)
+  expect(c2).toBe(12)
+})
+
+test('named -- exposed tells and asks', async () => {
+  const counter = Domain([
+    label('counter'),
+    withName(),
+    handleInit(ctx => ctx.Ok(10)),
+    handleTell('inc', (ctx, count) => ctx.Ok(count + 1)),
+    handleTell('dec', (ctx, count) => ctx.Ok(count - 1)),
+    handleAsk('count', (ctx, count) => ctx.Reply(count, count)),
+  ])
+
+  const ID = 32
+  counter.init(ID)
+  const t1 = await counter.ask.count(ID)
+  counter.tell.inc(ID)
+  counter.tell.inc(ID)
+  const t2 = await counter.ask.count(ID)
+  counter.tell.dec(ID)
+  const t3 = await counter.ask.count(ID)
+
+  expect(t1).toBe(10)
+  expect(t2).toBe(12)
+  expect(t3).toBe(11)
+})
+
+test('global -- exposed tells and asks', async () => {
+  const counter = Domain([
+    label('counter'),
+    withName((_, label) => label),
+    handleInit(ctx => ctx.Ok(10)),
+    handleTell('inc', (ctx, count) => ctx.Ok(count + 1)),
+    handleTell('dec', (ctx, count) => ctx.Ok(count - 1)),
+    handleAsk('count', (ctx, count) => ctx.Reply(count, count)),
+  ])
+
+  counter.init()
+  const t1 = await counter.ask.count()
+  counter.tell.inc()
+  counter.tell.inc()
+  const t2 = await counter.ask.count()
+  counter.tell.dec()
+  const t3 = await counter.ask.count()
+
+  expect(t1).toBe(10)
+  expect(t2).toBe(12)
+  expect(t3).toBe(11)
+})
