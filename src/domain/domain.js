@@ -30,7 +30,7 @@ function Domain(mods = []) {
   this.node = mods.filter(Boolean).reduce(function applyMod(node, mod) {
     return mod(node)
   }, this.node)
-  this.callback = buildCallbackFromNode(this.node)
+  this.callback = buildCallbackFromNode(this, this.node)
   this.events = Object.keys(this.node.broadcast).reduce(
     (ex, e) => ({...ex, [e]: this.node.ns(e)}),
     {}

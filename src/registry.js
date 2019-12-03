@@ -4,12 +4,14 @@ import {genColor} from './lib/gen-color.js'
 
 const TEST = Boolean(((process || {}).env || {}).TEST)
 
-const registry = {}
-const via = {}
+const root = typeof window == null ? {} : window
+root.__SOS__ = root.__SOS__ == null ? {} : root.__SOS__
+root.__REG__ = root.__REG__ == null ? {} : root.__REG__
+root.__VIA__ = root.__VIA__ == null ? {} : root.__VIA__
 
 function register(opts = {}) {
   const {pid, ...mailbox} = genMailbox()
-  registry[pid] = {
+  root.__REG__[pid] = {
     pid,
     mailbox,
     name: opts.name,
@@ -17,39 +19,56 @@ function register(opts = {}) {
     color: genColor(),
     debug: opts.debug || false,
   }
-  if (opts.name != null) via[opts.name] = pid
+  if (opts.name != null) root.__VIA__[opts.name] = pid
   return pid
 }
 
+root.__SOS__.whereIs = whereIs
 export function whereIs(address) {
   var pid = null
-  if (via[address] != null) return (address = via[address])
-  if (registry[address] != null) pid = address
+  if (root.__VIA__[address] != null) return (address = root.__VIA__[address])
+  if (root.__REG__[address] != null) pid = address
   return pid
 }
 
 const display = {
   pid(pid) {
     try {
-      const {color, name, label} = registry[pid]
-      const value = `%c[${label}]${name || pid}`
+      const {color, name, label} = root.__REG__[pid]
+      const n = name || pid
+      const value = n === label ? `%cGLOBAL %c[${n}]` : `%c${label} %c[${n}]`
+      const lStyles = `font-size:8px;font-weight:bold;`
       const styles = `color:${color};font-family:monospace;`
-      return [value, styles]
+      return [value, lStyles, styles]
     } catch (error) {
-      console.error('registry display.pid', {pid, error})
+      console.error(`registry display.pid for <${pid}>`, {pid, error})
       return ['', '']
     }
   },
   print(verb, pid, ...rest) {
     try {
-      pid = whereIs(pid)
-      if (pid == null) return
-      if (verb !== 'error' && !registry[pid].debug) return
-      const [name, styles] = display.pid(pid)
-      TEST ? console[verb](name.replace('%c', ''), ...rest) : console[verb](name, styles, ...rest)
+      const conn = root.__REG__[whereIs(pid)]
+      if (conn == null) {
+        console.warn(
+          `%cNope: ${verb}(${pid})`,
+          'color:tomato;font-family:monospace;font-weight:bold;',
+          [pid, ...rest]
+        )
+        return
+      }
+
+      if (verb === 'log' && !conn.debug) return
+      const [name, ...styles] = display.pid(conn.pid)
+      TEST
+        ? console[verb](name.replace(/\%c/g, ''), ...rest)
+        : console[verb](name, ...styles, ...rest)
       return
     } catch (error) {
-      console.error('registry display.print', {verb, pid, rest, error})
+      console.error(
+        `%cNope: ${verb}(${pid})`,
+        'color:tomato;font-family:monospace;font-weight:bold;',
+        [pid, ...rest]
+      )
       return
     }
   },
@@ -67,20 +86,21 @@ const display = {
 function deliver(address, msg) {
   const pid = whereIs(address)
   if (pid == null) return false
-  registry[pid].mailbox.send(msg)
+  root.__REG__[pid].mailbox.send(msg)
   return true
 }
 
 function receive(address) {
   const pid = whereIs(address)
   if (pid == null) Promise.reject(`No mailbox found for: ${address}`)
-  return registry[pid].mailbox.receive()
+  return root.__REG__[pid].mailbox.receive()
 }
 
+root.__SOS__.kill = kill
 export function kill(address) {
   const pid = whereIs(address)
-  if (address !== pid) delete via[address]
-  delete registry[pid]
+  if (address !== pid) delete root.__VIA__[address]
+  delete root.__REG__[pid]
   return pid
 }
 
@@ -96,6 +116,7 @@ function scrubMessage(opts = {}, value) {
   }
 }
 
+root.__SOS__.send = send
 export function send(opts, value) {
   queueMicrotask(function microSend() {
     const message = scrubMessage(opts, value)
@@ -109,10 +130,10 @@ export function send(opts, value) {
 function buildContext(pid, extra = {}) {
   return {
     self() {
-      return registry[pid].name || pid
+      return root.__REG__[pid].name || pid
     },
     label() {
-      return registry[pid].label
+      return root.__REG__[pid].label
     },
     extra: extra,
     receive() {
@@ -128,6 +149,7 @@ function noop() {
   return null
 }
 
+root.__SOS__.spawn = spawn
 export function spawn(callback = noop, initState = null, opts = {}) {
   if (typeof callback === 'object') {
     const node = callback.node || {}
@@ -156,8 +178,8 @@ export function spawn(callback = noop, initState = null, opts = {}) {
 }
 
 export function resetAll() {
-  for (let address of Object.keys(via)) kill(address)
-  for (let address of Object.keys(registry)) kill(address)
+  for (let address of Object.keys(root.__VIA__)) kill(address)
+  for (let address of Object.keys(root.__REG__)) kill(address)
 }
 
 export function nextIdle(minIdleTicks = 3) {

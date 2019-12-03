@@ -9,9 +9,9 @@ import {isStop} from './send/stop.js'
 import {isTell} from './send/tell.js'
 import Signal from './signal.js'
 
-export function buildCallbackFromNode(node) {
+export function buildCallbackFromNode(self, node) {
   return async function callback(context, initialState) {
-    const ctx = new Ctx(context, node)
+    const ctx = new Ctx(self, context, node)
     var signal = await node.handleInit(ctx, initialState)
     var timeout = null
 
@@ -77,7 +77,8 @@ export function buildCallbackFromNode(node) {
   }
 }
 
-function Ctx(context, node) {
+function Ctx(self, context, node) {
+  this[node.label] = self
   this.self = context.self
   this.Stop = Signal.Stop
   this.Ok = Signal.Ok
@@ -122,7 +123,7 @@ async function execMessage(grock, node, ctx, state, message) {
       signal = await callback(...args)
       done(signal.signal, signal)
     } else if (isTimeout(message)) {
-      const args = [ctx, state, message]
+      const args = [ctx, state, ...(((message || {}).value || {}).args || [])]
       const done = grock(`handleTimeout`, args)
       signal = await node.handleTimeout(...args)
       done(signal.signal)
