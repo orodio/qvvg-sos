@@ -4,7 +4,10 @@ import {genColor} from './lib/gen-color.js'
 
 const TEST = Boolean(((process || {}).env || {}).TEST)
 
-const root = typeof window == null ? {} : window
+const root =
+  (typeof self === 'object' && self.self === self && self) ||
+  (typeof global === 'object' && global.global === global && global) ||
+  this
 root.__SOS__ = root.__SOS__ == null ? {} : root.__SOS__
 root.__REG__ = root.__REG__ == null ? {} : root.__REG__
 root.__VIA__ = root.__VIA__ == null ? {} : root.__VIA__
