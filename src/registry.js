@@ -2,7 +2,8 @@ import queueMicrotask from './lib/queue-microtask.js'
 import {genMailbox, enqueued} from './lib/gen-mailbox.js'
 import {genColor} from './lib/gen-color.js'
 
-const TEST = Boolean(((process || {}).env || {}).TEST)
+const TEST = false
+// const TEST = Boolean(((process || {}).env || {}).TEST)
 
 const root =
   (typeof self === 'object' && self.self === self && self) ||
