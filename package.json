@@ -6,25 +6,26 @@
   "private": false,
   "author": "james hunter <github@qv.vg>",
   "license": "MIT",
-  "main": "dist/sos.cjs.js",
-  "module": "dist/sos.esm.js",
+  "source": "src/main.js",
+  "main": "dist/sos.js",
+  "module": "dist/sos.mjs",
   "browser": "dist/sos.umd.js",
+  "unpkg": "dist/sos.umd.js",
   "jest": {
-    "preset": "rollup-jest"
+    "transform": {
+      ".js": "jest-esm-transformer"
+    }
   },
   "devDependencies": {
+    "acorn": "^7.1.0",
     "jest": "^24.9.0",
-    "rollup": "^1.26.0",
-    "rollup-jest": "0.0.2",
-    "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-size": "^0.2.0",
-    "rollup-plugin-sourcemaps": "^0.4.2"
+    "jest-esm-transformer": "^1.0.0",
+    "microbundle": "^0.11.0"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "build": "rollup -c",
-    "watch": "rollup -c -w",
+    "build": "microbundle",
+    "watch": "TEST=1 jest --watch",
     "test": "TEST=1 jest"
   }
 }
